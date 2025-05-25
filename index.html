@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Programming Stair Climbing</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        input[type="number"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .result {
+            font-size: 24px;
+            color: #333;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #e7f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .visualization {
+            margin-top: 30px;
+        }
+        
+        .steps-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            min-width: 80px;
+            transition: all 0.3s;
+        }
+        
+        .step.highlight {
+            background-color: #ffeb3b;
+            border-color: #f57c00;
+            transform: scale(1.1);
+        }
+        
+        .step.source {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #388E3C;
+        }
+        
+        .step-number {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .step-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+        
+        .formula {
+            font-family: 'Courier New', monospace;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        
+        .animation-controls {
+            margin-top: 20px;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+        }
+        
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dynamic Programming: Stair Climbing Visualization</h1>
+    
+    <div class="container">
+        <div class="controls">
+            <div>
+                <label for="stairs">Number of stairs:</label>
+                <input type="number" id="stairs" min="0" max="200" value="10">
+            </div>
+            <button onclick="calculate()">Calculate</button>
+            <button onclick="animateCalculation()">Animate Solution</button>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            Enter a number of stairs and click Calculate
+        </div>
+        
+        <div class="explanation">
+            <h3>How it works:</h3>
+            <p>You can climb stairs by taking 1, 3, or 4 steps at a time.</p>
+            <p>The formula for calculating the number of ways to reach stair n is:</p>
+            <div class="formula">dp[n] = dp[n-1] + dp[n-3] + dp[n-4]</div>
+            <p>Base cases: dp[0]=0, dp[1]=1, dp[2]=1, dp[3]=2, dp[4]=4</p>
+        </div>
+        
+        <div class="animation-controls">
+            <div class="speed-control">
+                <label for="speed">Animation Speed:</label>
+                <input type="range" id="speed" min="100" max="2000" value="500">
+                <span id="speedValue">500</span>ms
+            </div>
+        </div>
+        
+        <div class="visualization">
+            <h3>Step-by-step calculation:</h3>
+            <div class="steps-container" id="stepsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let animationId = null;
+        
+        // Update speed display
+        document.getElementById('speed').addEventListener('input', function(e) {
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+        
+        function dynamicStep(n) {
+            if (n <= 4) {
+                const stepCount = [0, 1, 1, 2, 4];
+                return stepCount[n];
+            } else {
+                const stepCount = [0, 1, 1, 2, 4];
+                for (let i = 5; i <= n; i++) {
+                    stepCount[i] = 0;
+                }
+                for (let k = 5; k <= n; k++) {
+                    stepCount[k] = stepCount[k-1] + stepCount[k-3] + stepCount[k-4];
+                }
+                return stepCount[n];
+            }
+        }
+        
+        function calculate() {
+            const n = parseInt(document.getElementById('stairs').value);
+            const errorDiv = document.getElementById('error');
+            
+            // Clear any animation
+            if (animationId) {
+                clearTimeout(animationId);
+                animationId = null;
+            }
+            
+            // Validate input
+            if (isNaN(n) || n < 0) {
+                errorDiv.textContent = 'Please enter a valid positive number';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (n > 200) {
+                errorDiv.textContent = 'Please enter a number less than or equal to 200';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            errorDiv.style.display = 'none';
+            
+            const result = dynamicStep(n);
+            
+            // Format large numbers with commas
+            const formattedResult = result.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            
+            document.getElementById('result').innerHTML = 
+                `<strong>Number of ways to climb ${n} stairs:</strong> ${formattedResult}`;
+            
+            // Display the step-by-step calculation
+            displaySteps(n);
+        }
+        
+        function displaySteps(n) {
+            const container = document.getElementById('stepsContainer');
+            container.innerHTML = '';
+            
+            const stepCount = [0, 1, 1, 2, 4];
+            
+            // Display base cases
+            for (let i = 0; i <= Math.min(4, n); i++) {
+                const stepDiv = createStepElement(i, stepCount[i]);
+                container.appendChild(stepDiv);
+            }
+            
+            // Calculate and display remaining steps
+            if (n > 4) {
+                for (let i = 5; i <= n; i++) {
+                    stepCount[i] = stepCount[i-1] + stepCount[i-3] + stepCount[i-4];
+                    const stepDiv = createStepElement(i, stepCount[i]);
+                    container.appendChild(stepDiv);
+                }
+            }
+        }
+        
+        function createStepElement(index, value) {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step';
+            stepDiv.id = `step-${index}`;
+            stepDiv.innerHTML = `
+                <div class="step-number">Stair ${index}</div>
+                <div class="step-value">${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</div>
+            `;
+            return stepDiv;
+        }
+        
+        async function animateCalculation() {
+            const n = parseInt(document.getElementById('stairs').value);
+            
+            if (isNaN(n) || n < 0 || n > 200) {
+                return;
+            }
+            
+            // Clear any existing animation
+            if (animationId) {
+                clearTimeout(animationId);
+                animationId = null;
+            }
+            
+            const container = document.getElementById('stepsContainer');
+            container.innerHTML = '';
+            
+            const stepCount = [0, 1, 1, 2, 4];
+            const speed = parseInt(document.getElementById('speed').value);
+            
+            // Animate base cases
+            for (let i = 0; i <= Math.min(4, n); i++) {
+                await animateStep(i, stepCount[i], null, speed);
+            }
+            
+            // Animate remaining steps
+            if (n > 4) {
+                for (let i = 5; i <= n; i++) {
+                    stepCount[i] = stepCount[i-1] + stepCount[i-3] + stepCount[i-4];
+                    await animateStep(i, stepCount[i], [i-1, i-3, i-4], speed);
+                }
+            }
+        }
+        
+        function animateStep(index, value, sources, speed) {
+            return new Promise(resolve => {
+                const container = document.getElementById('stepsContainer');
+                const stepDiv = createStepElement(index, value);
+                stepDiv.classList.add('highlight');
+                container.appendChild(stepDiv);
+                
+                // Highlight source steps
+                if (sources) {
+                    sources.forEach(src => {
+                        const srcElement = document.getElementById(`step-${src}`);
+                        if (srcElement) {
+                            srcElement.classList.add('source');
+                        }
+                    });
+                }
+                
+                // Scroll to the new element
+                stepDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                animationId = setTimeout(() => {
+                    stepDiv.classList.remove('highlight');
+                    if (sources) {
+                        sources.forEach(src => {
+                            const srcElement = document.getElementById(`step-${src}`);
+                            if (srcElement) {
+                                srcElement.classList.remove('source');
+                            }
+                        });
+                    }
+                    resolve();
+                }, speed);
+            });
+        }
+        
+        // Calculate initial value
+        calculate();
+    </script>
+</body>
+</html>
